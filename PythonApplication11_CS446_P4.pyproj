@@ -24,6 +24,11 @@
   <ItemGroup>
     <Compile Include="PythonApplication11_CS446_P4.py" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="1.json" />
+    <Content Include="out.txt" />
+    <Content Include="smallTest.json" />
+  </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
     <PtvsTargetsFile>$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets</PtvsTargetsFile>

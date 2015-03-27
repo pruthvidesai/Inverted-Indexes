@@ -24,27 +24,27 @@ class Inverted():
         for packet in self.json_data:
             # strip terms from text
             text = packet['text'].split()
-            # for each term in text
             length_text = len(text)
-            print length_text
-            temp_text = copy.deepcopy(text)
-            temp_dict = {'pos':[]}
             # for term in each packet
             for term in range(length_text):
-                # if not in main dict
+                # creates list of dicts for new term
                 if not self.inverted_index.has_key(text[term]):
                     self.inverted_index[text[term]] = []
-                    # create a dict for term values
-                    temp_dict = {'pos':[]}
-                    temp_dict['playId'] = packet['playId']
-                    temp_dict['sceneId'] = packet['sceneId']
-                    temp_dict['sceneNum'] = packet['sceneNum']
-                    # add term to main dict
-                    self.inverted_index[text[term]].append(temp_dict)
+                    term_dict = {}
+                    term_dict['playId'] = packet['playId']
+                    term_dict['sceneId'] = packet['sceneId']
+                    term_dict['sceneNum'] = packet['sceneNum']
+                    term_dict['pos'] = []
+                    self.inverted_index.get(text[term]).append(term_dict)
+                # for a term that already exists
+                for dicts in self.inverted_index.get(text[term]):
+                    if dicts['sceneId'] == packet['sceneId']:
+                        dicts['pos'].append(term + 1)
                 
 
     def print_indexes(self):
         pprint(self.inverted_index)
+        #pprint(self.json_data)
 
 if __name__ == '__main__':
     file = "1.json"
