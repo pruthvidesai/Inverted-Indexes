@@ -1,0 +1,18 @@
+{
+  "corpus" : [ {
+      "playId" : "othello",
+      "sceneId" : "othello:0.0",
+      "sceneNum" : 0,
+	  "text":  "thee you you"
+    }, {
+      "playId" : "othello",
+      "sceneId" : "othello:0.1",
+      "sceneNum" : 1,
+	  "text":  "thee thee thee you you"
+    } , {
+      "playId" : "othello",
+      "sceneId" : "othello:0.2",
+      "sceneNum" : 2,
+	  "text":  "thee thee thee thee you you you"
+    }  ]
+  }

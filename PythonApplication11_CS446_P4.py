@@ -1,22 +1,119 @@
-import json
-import copy
+import json, re, copy, time
 from pprint import pprint
-import subprocess
 
 class Inverted():
-    def __init__(self, file):
+    def __init__(self, file, inverted={}):
         self.file = file
+        self.query = None
         self.json_data = None
-        self.inverted_index = {}
+        self.inverted_index = inverted
 
-    def input(self):
+    def input_file(self):
         # creates a list of dictionaries from json
         self.file = open(self.file)
         self.json_data = json.load(self.file)
         self.json_data = self.json_data['corpus']
 
-    def query(self):
-        pass
+    def input_query(self):
+        id = None
+        # Term based Queries
+        # 1. Find scene(s) where "thee" or "thou" is used more than "you"
+        #self.query = raw_input("Query: ")
+        self.query = open('input.txt', 'r')
+        self.query = self.query.readline()
+
+        # scene or play
+        if "scene" in self.query:
+            id = "sceneId"
+        elif "play" in self.query:
+            id = "playId"
+        else:
+            query = ""
+            while ("scene" not in query):
+                query = raw_input("scene or play? ").lower()
+                id = "sceneId"
+                if "play" in query:
+                    id = "playId"
+                    break
+
+        # break down the query
+        # string between where and is
+        word = self.query.split()
+        pos = []
+        for i in range(len(word)):
+            if word[i] == "is":
+                pos.append(i)
+                break
+            elif word[i] == "where":
+                pos.append(i+1)
+
+        # extract main terms
+        main_terms = []
+        term_pos = range(pos[0], pos[1])
+        for x in range(len(term_pos)):
+            main_terms.append(word[term_pos[x]])
+
+        # check for comparison: if yes add compare term
+        compare_term = []
+        if self.query_is_comparison:
+            match = re.findall(r'"\w+"', self.query)
+            for item in match:
+                if item not in main_terms:
+                    compare_term.append(item)
+
+        # process the query
+        self.process_query(id, main_terms, compare_term)
+
+    def process_query(self, id, main, compare):
+        # initial setup
+        list_of_results = []
+        # boolean in main terms
+        # OR
+        if "or" in main:
+            for term in main:
+                term = term.strip('"')
+                if not term == "or":
+                    result = self.subprocess_query(term, id, main, compare, list_of_results)
+        
+        # AND
+        # assuming all names are in inverted index
+        elif "and" in main:
+            pass
+        
+        else:
+            for term in main:
+                term = term.strip('"')
+                result = self.subprocess_query(term, id, main, compare, list_of_results)
+        
+        pprint(sorted(result))
+
+    def subprocess_query(self, term, id, main, compare, list_of_results):
+        if self.inverted_index.has_key(term):
+            term_list = self.inverted_index[term]
+            # main term
+            for term_dicts in term_list:
+                term_count = len(term_dicts['pos'])
+                # compare term
+                if len(compare) > 0:
+                    for compare_dicts in self.inverted_index[compare[0].strip('"')]:
+                        if compare_dicts[id] == term_dicts[id]:
+                            compare_count = len(compare_dicts['pos'])
+                            if term_count > compare_count:
+                                if not term in list_of_results:
+                                    list_of_results.append(term)
+                                if not term_dicts[id] in list_of_results:
+                                    list_of_results.append(term_dicts[id])
+                else:
+                    if not term_dicts[id] in list_of_results:
+                        list_of_results.append(term_dicts[id])
+        return list_of_results
+
+    def query_is_comparison(self):
+        conditions = ["used more than", "greater than"]
+
+        for condition in conditions:
+            if condition in self.query:
+                return True
 
     def create_inverted_indexes(self):
         # each packet in the corpus
@@ -56,8 +153,9 @@ class Inverted():
         pprint(self.inverted_index)
 
 if __name__ == '__main__':
-    file = "1.json"
+    file = "shakespeare-scenes.json"
     I = Inverted(file)
-    I.input()
+    I.input_file()
     I.create_inverted_indexes()
-    I.print_indexes()
+    I.input_query()
+    #I.print_indexes()
