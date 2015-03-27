@@ -26,19 +26,21 @@ class Inverted():
             text = packet['text'].split()
             # for each term in text
             length_text = len(text)
+            print length_text
             temp_text = copy.deepcopy(text)
+            temp_dict = {'pos':[]}
+            # for term in each packet
             for term in range(length_text):
-                temp_dict = {'pos':[]}
-                # create a dict for term values
-                temp_dict['playId'] = packet['playId']
-                temp_dict['sceneId'] = packet['sceneId']
-                temp_dict['sceneNum'] = packet['sceneNum']
-                temp_dict['pos'].append(term + 1)
                 # if not in main dict
-                if not self.inverted_index.has_key(term):
+                if not self.inverted_index.has_key(text[term]):
                     self.inverted_index[text[term]] = []
-                # add term to main dict
-                self.inverted_index[text[term]].append(temp_dict)
+                    # create a dict for term values
+                    temp_dict = {'pos':[]}
+                    temp_dict['playId'] = packet['playId']
+                    temp_dict['sceneId'] = packet['sceneId']
+                    temp_dict['sceneNum'] = packet['sceneNum']
+                    # add term to main dict
+                    self.inverted_index[text[term]].append(temp_dict)
                 
 
     def print_indexes(self):
