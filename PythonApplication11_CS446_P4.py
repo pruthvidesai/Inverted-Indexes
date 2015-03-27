@@ -34,8 +34,12 @@ class Inverted():
                 temp_dict['sceneId'] = packet['sceneId']
                 temp_dict['sceneNum'] = packet['sceneNum']
                 temp_dict['pos'].append(term + 1)
+                # if not in main dict
+                if not self.inverted_index.has_key(term):
+                    self.inverted_index[text[term]] = []
                 # add term to main dict
-                self.inverted_index[text[term]] = temp_dict
+                self.inverted_index[text[term]].append(temp_dict)
+                
 
     def print_indexes(self):
         pprint(self.inverted_index)
