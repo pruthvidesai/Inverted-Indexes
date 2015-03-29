@@ -16,9 +16,9 @@ class Inverted():
 
     def input_query(self):
         id = None
-        #self.query = raw_input("Query: ")
-        self.query = open('input.txt', 'r')
-        self.query = self.query.readline()
+        self.query = raw_input("Query: ")
+        #self.query = open('input.txt', 'r')
+        #self.query = self.query.readline()
 
         # scene or play
         if "scene" in self.query:
@@ -51,15 +51,10 @@ class Inverted():
         # 2. Find scene(s) where "lady macbeth" is mentioned
 
         # extract main terms
-        # check if phrase based query
         main_terms = []
-        query_type = "term"
         term_pos = range(pos[0], pos[1])
         for x in range(len(term_pos)):
-            if len(word[term_pos[x]].split()) > 1:
-                query_type = "phrase"
             main_terms.append(word[term_pos[x]])
-        print query_type
 
         # check for comparison: if yes add compare term
         compare_term = []
@@ -68,6 +63,19 @@ class Inverted():
             for item in match:
                 if item not in main_terms:
                     compare_term.append(item)
+        
+        # check if phrase based query
+        query_type = "term"
+        match = re.findall(r'"[\w\s]+"', self.query)
+        for item in match:
+            if len(item.split()) > 1:
+                query_type = "phrase"
+
+        # strip before processing
+        temp_main_terms = []
+        for stripped in main_terms:
+            temp_main_terms.append(stripped.strip('"'))
+        main_terms = copy.deepcopy(temp_main_terms)
 
         # process the query
         self.process_query(id, query_type, main_terms, compare_term)
@@ -77,26 +85,32 @@ class Inverted():
         list_of_results = []
 
         # boolean in main terms
-        # OR
-        if "or" in main:
-            for term in main:
-                term = term.strip('",').lower()
-                if not term == "or":
-                    result = self.subprocess_query(term, id, compare, list_of_results)
+        if type == "term":
+            # OR
+            if "or" in main:
+                for term in main:
+                    term = term.strip('",').lower()
+                    if not term == "or":
+                        result = self.term_subprocess_query(term, id, compare, list_of_results)
         
-        # AND
-        # assuming all names are in inverted index
-        elif "and" in main:
-            pass
+            # AND
+            # assuming all names are in inverted index
+            elif "and" in main:
+                pass
         
-        else:
-            for term in main:
-                term = term.strip('"')
-                result = self.subprocess_query(term, id, compare, list_of_results)
+            else:
+                for term in main:
+                    term = term.strip('"')
+                    result = self.term_subprocess_query(term, id, compare, list_of_results)
+
+        elif type == "phrase":
+            # use position based search
+            # only supports one phrase for now
+            result = self.phrase_subprocess_query(main, id, compare, list_of_results)
         
         pprint(sorted(result))
 
-    def subprocess_query(self, term, id, compare, list_of_results):
+    def term_subprocess_query(self, term, id, compare, list_of_results):
         if self.inverted_index.has_key(term):
             term_list = self.inverted_index[term]
             # main term
@@ -117,6 +131,37 @@ class Inverted():
                         list_of_results.append(term_dicts[id])
         return list_of_results
 
+    def phrase_subprocess_query(self, terms, id, compare, list_of_results):
+        # search for phrases in documents
+        if self.inverted_index.has_key(terms[0]):
+            term_list = self.inverted_index[terms[0]]
+            # each dictionary in first term
+            for term_dict in term_list:
+                temp_terms = [terms[0]]
+                pos = term_dict['pos']
+                for position in pos:
+                    # for all following terms in phrase
+                    for index in range(1, len(terms)):
+                        #print "term: ", terms[index], position+index
+                        temp_terms = self.subphrase_process(terms[index], id, term_dict[id], position + index, temp_terms)
+                    # if phrase found in that scene/play: break
+                    if len(terms) == len(temp_terms):
+                        if not term_dict[id] in list_of_results:
+                            list_of_results.append(term_dict[id])
+
+        return list_of_results
+
+    def subphrase_process(self, term, id, id_info, position, results):
+        # search that term in that position
+        term_list = self.inverted_index[term]
+        # main term
+        for term_dicts in term_list:
+            if term_dicts[id] == id_info:
+                if term_dicts['pos'].count(position) > 0:
+                    results.append(term)
+                    break
+        return results
+        
     def query_is_comparison(self):
         conditions = ["used more than", "greater than"]
 
@@ -159,6 +204,7 @@ class Inverted():
                     for dicts in self.inverted_index.get(text[term]):
                         if dicts['sceneId'] == packet['sceneId']:
                             dicts['pos'].append(term + 1)
+            self.save_inverted_indexes()
 
     def save_inverted_indexes(self):
         # saves inverted index in json format to a file
