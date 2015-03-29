@@ -26,7 +26,11 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="1.json" />
+    <Content Include="input.txt" />
     <Content Include="out.txt" />
+    <Content Include="query_test.json" />
+    <Content Include="rough.txt" />
+    <Content Include="shakespeare-scenes.json" />
     <Content Include="smallTest.json" />
   </ItemGroup>
   <PropertyGroup>
